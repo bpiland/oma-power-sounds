@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "bhp.power-sounds",
+  "name": "Power Sounds",
+  "version": "1.0.0",
+  "author": "Baden Piland",
+  "license": "MIT",
+  "description": "Short analog cues for charger plug/unplug, low battery, and battery full.",
+  "kinds": [
+    "service"
+  ],
+  "entryPoints": {
+    "service": "Service.qml"
+  }
+}
