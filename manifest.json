@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "id": "bhp.power-sounds",
-  "name": "Power Sounds",
+  "id": "oma-power-sounds",
+  "name": "oma-power-sounds",
   "version": "1.0.0",
   "author": "Baden Piland",
   "license": "MIT",

@@ -1,4 +1,4 @@
-These four cues are synthesized for Power Sounds
+These four cues are synthesized for oma-power-sounds
 (see scripts/generate_sounds.py). They are not sampled from another work.
 MIT, same as the plugin.
 

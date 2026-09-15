@@ -15,11 +15,11 @@ Item {
   readonly property int lowThreshold: Model.DEFAULT_LOW_THRESHOLD
   readonly property int startupGraceMs: 600
   readonly property string home: Quickshell.env("HOME")
-  readonly property string configPath: home + "/.config/omarchy/power-sounds.conf"
+  readonly property string configPath: home + "/.config/omarchy/oma-power-sounds.conf"
   readonly property string pluginDir: {
     if (manifest && manifest.__sourceDir)
       return String(manifest.__sourceDir)
-    var id = manifest && manifest.id ? String(manifest.id) : "bhp.power-sounds"
+    var id = manifest && manifest.id ? String(manifest.id) : "oma-power-sounds"
     return home + "/.config/omarchy/plugins/" + id
   }
 
@@ -55,10 +55,10 @@ Item {
   function emitEvent(name) {
     if (!name) return
     if (!root.shouldPlay) {
-      console.info("power-sounds:", name, "(silent)")
+      console.info("oma-power-sounds:", name, "(silent)")
       return
     }
-    console.info("power-sounds:", name)
+    console.info("oma-power-sounds:", name)
     root.enqueue(name)
   }
 
@@ -130,7 +130,7 @@ Item {
     root.lastOnBattery = UPower.onBattery
     root.listening = true
     root.handleChargeChange()
-    console.info("power-sounds: listening v1.0.0")
+    console.info("oma-power-sounds: listening")
   }
 
   function statusText() {
@@ -198,13 +198,13 @@ Item {
         return
       }
       if (exitCode !== 0)
-        console.warn("power-sounds: pw-play exited", exitCode)
+        console.warn("oma-power-sounds: pw-play exited", exitCode)
       root.kickPlayer()
     }
   }
 
   IpcHandler {
-    target: "bhp.power-sounds"
+    target: "oma-power-sounds"
 
     function list(): string {
       return Model.eventNames().join("\n")

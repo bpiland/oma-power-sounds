@@ -91,8 +91,8 @@ function startupSuppressesFull() {
 function soundMap() {
   assert.strictEqual(Model.soundFile("ac-online"), "sounds/ac-online.wav")
   assert.strictEqual(
-    Model.soundFile("ac-online", "/plugins/bhp.power-sounds"),
-    "/plugins/bhp.power-sounds/sounds/ac-online.wav"
+    Model.soundFile("ac-online", "/plugins/oma-power-sounds"),
+    "/plugins/oma-power-sounds/sounds/ac-online.wav"
   )
   assert.strictEqual(Model.soundFile("ac-offline").endsWith("ac-offline.wav"), true)
   assert.strictEqual(Model.soundFile("battery-low").endsWith("battery-low.wav"), true)

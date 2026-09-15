@@ -1,4 +1,4 @@
-# Power Sounds
+# oma-power-sounds
 
 Short analog cues for charger plug/unplug, low battery, and battery full on [Omarchy](https://omarchy.org/).
 
@@ -7,17 +7,17 @@ This is an Omarchy **shell plugin**, not a theme and not a standalone daemon. It
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/bpiland/omarchy-power-sounds.git --enable
+omarchy plugin add https://github.com/bpiland/oma-power-sounds.git --enable
 ```
 
 Update and remove:
 
 ```bash
-omarchy plugin update bhp.power-sounds
-omarchy plugin remove bhp.power-sounds
+omarchy plugin update oma-power-sounds
+omarchy plugin remove oma-power-sounds
 ```
 
-Removal deletes the plugin checkout. It does **not** delete `~/.config/omarchy/power-sounds.conf`. Remove that yourself if you want it gone.
+Removal deletes the plugin checkout. It does **not** delete `~/.config/omarchy/oma-power-sounds.conf`. Remove that yourself if you want it gone.
 
 ## Events
 
@@ -34,7 +34,7 @@ There is no USB insert/remove event.
 
 ## Config
 
-`~/.config/omarchy/power-sounds.conf` is created on first run if it is missing. Existing files are never overwritten. Edits apply as soon as the file is saved.
+`~/.config/omarchy/oma-power-sounds.conf` is created on first run if it is missing. Existing files are never overwritten. Edits apply as soon as the file is saved.
 
 ```ini
 enabled=true
@@ -51,12 +51,12 @@ volume=0.45
 ## Control
 
 ```bash
-omarchy-shell bhp.power-sounds list
-omarchy-shell bhp.power-sounds status
-omarchy-shell bhp.power-sounds play ac-online
-omarchy-shell bhp.power-sounds play ac-offline
-omarchy-shell bhp.power-sounds play battery-low
-omarchy-shell bhp.power-sounds play battery-full
+omarchy-shell oma-power-sounds list
+omarchy-shell oma-power-sounds status
+omarchy-shell oma-power-sounds play ac-online
+omarchy-shell oma-power-sounds play ac-offline
+omarchy-shell oma-power-sounds play battery-low
+omarchy-shell oma-power-sounds play battery-full
 ```
 
 `play` of an unknown name prints the event list. While the speaker is muted (and `follow_system_mute` is on), `play` returns `silent` and does not spawn `pw-play`.

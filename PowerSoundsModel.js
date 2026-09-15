@@ -1,4 +1,4 @@
-// Event policy for Power Sounds. QML calls this; Node can too (see tests/).
+// Event policy for oma-power-sounds. QML calls this; Node can too (see tests/).
 // Sounds are not here — this file only decides *whether* an event fired.
 
 var EVENTS = ["ac-online", "ac-offline", "battery-low", "battery-full"]
@@ -94,7 +94,7 @@ function startupLatches(input) {
 
 var DEFAULT_VOLUME = 0.45
 var DEFAULT_CONFIG_TEXT = [
-  "# Power Sounds",
+  "# oma-power-sounds",
   "# Default: follow the system speaker mute and volume=0.",
   "# Set follow_system_mute=false to mute this plugin on its own",
   "# (enabled=false) without tying it to the speaker mute key.",
