@@ -5,7 +5,6 @@ import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
 import "PowerSoundsModel.js" as Model
 
-// Headless listener. Plays bundled cues through pw-play.
 Item {
   id: root
 
@@ -14,28 +13,21 @@ Item {
 
   readonly property int lowThreshold: Model.DEFAULT_LOW_THRESHOLD
   readonly property int startupGraceMs: 600
-  readonly property string home: Quickshell.env("HOME")
-  readonly property string configPath: home + "/.config/omarchy/oma-power-sounds.conf"
-  readonly property string pluginDir: {
-    if (manifest && manifest.__sourceDir)
-      return String(manifest.__sourceDir)
-    var id = manifest && manifest.id ? String(manifest.id) : "oma-power-sounds"
-    return home + "/.config/omarchy/plugins/" + id
-  }
+  readonly property string configPath: Quickshell.env("HOME") + "/.config/omarchy/oma-power-sounds.conf"
+  readonly property string pluginDir: manifest && manifest.__sourceDir ? String(manifest.__sourceDir) : ""
 
   property var config: Model.defaultConfig()
-  property bool configLoaded: false
   property bool listening: false
   property var lastOnBattery: null
-  property bool notifiedLow: false
-  property bool notifiedFull: false
   property var playQueue: []
   property bool stoppingPlayer: false
 
   readonly property var sink: Pipewire.defaultAudioSink
+  readonly property bool sinkKnown: !!(sink && sink.audio)
   readonly property bool systemSilent: Model.systemIsSilent(
-    !!(sink && sink.audio && sink.audio.muted),
-    sink && sink.audio ? sink.audio.volume : 0
+    root.sinkKnown,
+    root.sinkKnown && sink.audio.muted,
+    root.sinkKnown ? sink.audio.volume : 0
   )
   readonly property bool shouldPlay: Model.shouldPlay(root.config, root.systemSilent)
   readonly property real volume: {
@@ -43,22 +35,21 @@ Item {
     return isFinite(value) ? Math.max(0, Math.min(1, value)) : Model.DEFAULT_VOLUME
   }
 
-  function device() {
-    return UPower.displayDevice
+  PersistentProperties {
+    id: persisted
+    reloadableId: "oma-power-sounds"
+    property bool notifiedLow: false
+    property bool notifiedFull: false
   }
 
   function applyConfig(text) {
     root.config = Model.parseConfig(text)
-    root.configLoaded = true
+    if (!root.listening && !startupGrace.running)
+      startupGrace.start()
   }
 
   function emitEvent(name) {
-    if (!name) return
-    if (!root.shouldPlay) {
-      console.info("oma-power-sounds:", name, "(silent)")
-      return
-    }
-    console.info("oma-power-sounds:", name)
+    if (!name || !root.shouldPlay) return
     root.enqueue(name)
   }
 
@@ -105,43 +96,31 @@ Item {
   function handleChargeChange() {
     if (!root.listening) return
     var result = Model.chargeUpdate({
-      device: root.device(),
+      device: UPower.displayDevice,
       onBattery: UPower.onBattery,
       dischargingState: UPowerDeviceState.Discharging,
       fullyChargedState: UPowerDeviceState.FullyCharged,
       lowThreshold: root.lowThreshold,
-      notifiedLow: root.notifiedLow,
-      notifiedFull: root.notifiedFull
+      fullPercent: root.config.fullPercent,
+      notifiedLow: persisted.notifiedLow,
+      notifiedFull: persisted.notifiedFull
     })
-    root.notifiedLow = result.notifiedLow
-    root.notifiedFull = result.notifiedFull
+    persisted.notifiedLow = result.notifiedLow
+    persisted.notifiedFull = result.notifiedFull
     for (var i = 0; i < result.events.length; i++)
       root.emitEvent(result.events[i])
   }
 
   function startListening() {
-    var latches = Model.startupLatches({
-      device: root.device(),
-      onBattery: UPower.onBattery,
-      fullyChargedState: UPowerDeviceState.FullyCharged
-    })
-    root.notifiedLow = latches.notifiedLow
-    root.notifiedFull = latches.notifiedFull
+    persisted.notifiedFull = persisted.notifiedFull || Model.isFull(
+      UPower.displayDevice,
+      UPower.onBattery,
+      UPowerDeviceState.FullyCharged,
+      root.config.fullPercent
+    )
     root.lastOnBattery = UPower.onBattery
     root.listening = true
     root.handleChargeChange()
-    console.info("oma-power-sounds: listening")
-  }
-
-  function statusText() {
-    return [
-      "enabled=" + root.config.enabled,
-      "follow_system_mute=" + root.config.followSystemMute,
-      "system_silent=" + root.systemSilent,
-      "should_play=" + root.shouldPlay,
-      "volume=" + root.volume,
-      "config=" + root.configPath
-    ].join("\n")
   }
 
   onShouldPlayChanged: {
@@ -149,7 +128,6 @@ Item {
       root.silence()
   }
 
-  // Without this, sink.audio.muted never updates after first read.
   PwObjectTracker {
     objects: root.sink ? [root.sink] : []
   }
@@ -211,7 +189,15 @@ Item {
     }
 
     function status(): string {
-      return root.statusText()
+      return [
+        "enabled=" + root.config.enabled,
+        "follow_system_mute=" + root.config.followSystemMute,
+        "full_percent=" + root.config.fullPercent,
+        "system_silent=" + root.systemSilent,
+        "should_play=" + root.shouldPlay,
+        "volume=" + root.volume,
+        "config=" + root.configPath
+      ].join("\n")
     }
 
     function play(event: string): string {
@@ -224,6 +210,4 @@ Item {
       return name
     }
   }
-
-  Component.onCompleted: startupGrace.start()
 }

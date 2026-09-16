@@ -26,9 +26,11 @@ Removal deletes the plugin checkout. It does **not** delete `~/.config/omarchy/o
 | `ac-online` | Charger connected | Two-step up (E then G), filter opens |
 | `ac-offline` | Charger removed | One drop (G to E), filter shuts |
 | `battery-low` | ≤10% while discharging (same threshold as Omarchy) | Dry double stab |
-| `battery-full` | UPower reports fully charged | Sung E–G–C cadence |
+| `battery-full` | On AC at `full_percent` (default 100), or UPower `FullyCharged` | Sung E–G–C cadence |
 
 Startup does not play `ac-online` / `ac-offline` just because you are already plugged in. Already-full at login is latched so login does not chime. Already-low at login may play, matching the stock battery warning.
+
+Charge-limited laptops often never report 100% or `FullyCharged`. Set `full_percent` to the cap (80, 60, …) so the full chime still fires when you reach it.
 
 There is no USB insert/remove event.
 
@@ -40,6 +42,7 @@ There is no USB insert/remove event.
 enabled=true
 follow_system_mute=true
 volume=0.45
+full_percent=100
 ```
 
 | Key | Default | What it does |
@@ -47,6 +50,7 @@ volume=0.45
 | `enabled` | `true` | Master on/off for this plugin. |
 | `follow_system_mute` | `true` | When `true`, a muted speaker (or volume 0) silences the plugin; unmuting brings the cues back. When `false`, only `enabled` mutes the plugin — system audio can stay up. Independent mode cannot *override* a muted speaker: `pw-play` still goes to that sink. |
 | `volume` | `0.45` | Stream gain from `0` to `1`. PipeWire still applies the system output slider, so this is not multiplied by it. |
+| `full_percent` | `100` | On-AC percentage that counts as charged. Set this to your charge limit so `battery-full` still plays. |
 
 ## Control
 
