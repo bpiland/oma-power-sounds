@@ -124,6 +124,10 @@ function configAndMute() {
   assert.strictEqual(def.fullPercent, 100)
   assert.strictEqual(Model.shouldPlay(def, false), true)
   assert.strictEqual(Model.shouldPlay(def, true), false)
+  assert.strictEqual(Model.silenceReason(def, false), "")
+  assert.strictEqual(Model.silenceReason(def, true), "system muted")
+  assert.strictEqual(Model.silenceReason(Model.parseConfig("enabled=false\n"), false), "disabled")
+  assert.strictEqual(Model.silenceReason(Model.parseConfig("volume=0\n"), false), "volume=0")
 
   const independent = Model.parseConfig("follow_system_mute=false\n")
   assert.strictEqual(independent.followSystemMute, false)

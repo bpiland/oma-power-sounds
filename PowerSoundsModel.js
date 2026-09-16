@@ -157,10 +157,14 @@ function systemIsSilent(sinkKnown, sinkMuted, sinkVolume) {
 }
 
 function shouldPlay(config, systemSilent) {
-  if (!config || !config.enabled) return false
-  if (Number(config.volume) <= 0) return false
-  if (config.followSystemMute && systemSilent) return false
-  return true
+  return silenceReason(config, systemSilent) === ""
+}
+
+function silenceReason(config, systemSilent) {
+  if (!config || !config.enabled) return "disabled"
+  if (Number(config.volume) <= 0) return "volume=0"
+  if (config.followSystemMute && systemSilent) return "system muted"
+  return ""
 }
 
 if (typeof module !== "undefined") {
@@ -182,6 +186,7 @@ if (typeof module !== "undefined") {
     defaultConfig: defaultConfig,
     parseConfig: parseConfig,
     systemIsSilent: systemIsSilent,
-    shouldPlay: shouldPlay
+    shouldPlay: shouldPlay,
+    silenceReason: silenceReason
   }
 }

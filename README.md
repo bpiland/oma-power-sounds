@@ -57,13 +57,22 @@ full_percent=100
 ```bash
 omarchy-shell oma-power-sounds list
 omarchy-shell oma-power-sounds status
+omarchy-shell oma-power-sounds log
 omarchy-shell oma-power-sounds play ac-online
 omarchy-shell oma-power-sounds play ac-offline
 omarchy-shell oma-power-sounds play battery-low
 omarchy-shell oma-power-sounds play battery-full
 ```
 
-`play` of an unknown name prints the event list. While the speaker is muted (and `follow_system_mute` is on), `play` returns `silent` and does not spawn `pw-play`.
+`play` returns `ok …`, `silent: …`, or `error: …`. Unknown names print the event list.
+
+Failures (missing file, `pw-play` exit, queue full) go to the journal and to a rotating log:
+
+```
+~/.local/state/omarchy/oma-power-sounds.log
+```
+
+Cap is 32KB, then the file is moved to `oma-power-sounds.log.1` and starts over. Successful plays are not logged.
 
 ## Requirements
 

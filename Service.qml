@@ -15,7 +15,12 @@ Item {
   readonly property int startupGraceMs: 600
   readonly property int acDebounceMs: 250
   readonly property int maxQueue: 2
-  readonly property string configPath: Quickshell.env("HOME") + "/.config/omarchy/oma-power-sounds.conf"
+  readonly property int maxLogBytes: 32768
+  readonly property string home: Quickshell.env("HOME")
+  readonly property string configPath: home + "/.config/omarchy/oma-power-sounds.conf"
+  readonly property string stateDir: home + "/.local/state/omarchy"
+  readonly property string logPath: stateDir + "/oma-power-sounds.log"
+  readonly property string logPrevPath: stateDir + "/oma-power-sounds.log.1"
 
   property var config: Model.defaultConfig()
   property bool listening: false
@@ -23,6 +28,7 @@ Item {
   property var playQueue: []
   property bool stoppingPlayer: false
   property string playingPath: ""
+  property string lastError: ""
 
   readonly property var sink: Pipewire.defaultAudioSink
   readonly property bool sinkKnown: !!(sink && sink.audio)
@@ -50,9 +56,57 @@ Item {
       startupGrace.start()
   }
 
+  function fail(msg) {
+    var line = Qt.formatDateTime(new Date(), "yyyy-MM-dd hh:mm:ss") + " ERROR " + msg
+    root.lastError = line
+    console.warn("oma-power-sounds:", msg)
+    root.appendLog(line)
+  }
+
+  function warn(msg) {
+    var line = Qt.formatDateTime(new Date(), "yyyy-MM-dd hh:mm:ss") + " WARN  " + msg
+    console.warn("oma-power-sounds:", msg)
+    root.appendLog(line)
+  }
+
+  function appendLog(line) {
+    var body = ""
+    try {
+      body = String(logFile.text() || "")
+    } catch (e) {
+      body = ""
+    }
+    if (body.length && body.charAt(body.length - 1) !== "\n")
+      body += "\n"
+    body += line + "\n"
+    if (body.length > root.maxLogBytes) {
+      logPrev.setText(body)
+      body = line + "\n"
+    }
+    logFile.setText(body)
+  }
+
   function emitEvent(name) {
-    if (!name || !root.shouldPlay) return
-    root.enqueue(name)
+    if (!name) return
+    root.playNamed(name)
+  }
+
+  function playNamed(name) {
+    var quiet = Model.silenceReason(root.config, root.systemSilent)
+    if (quiet)
+      return "silent: " + quiet
+    if (root.playQueue.length >= root.maxQueue) {
+      root.warn("queue full, drop " + name)
+      return "error: queue full"
+    }
+    var path = root.resolvedSound(name)
+    if (!path || path.charAt(0) !== "/") {
+      root.fail("no sound file for " + name + (path ? " (" + path + ")" : ""))
+      return "error: no sound file for " + name
+    }
+    root.playQueue = root.playQueue.concat([path])
+    root.kickPlayer()
+    return "ok " + name
   }
 
   function resolvedSound(name) {
@@ -62,14 +116,6 @@ Item {
     if (url.indexOf("file://") === 0)
       return url.slice(7)
     return url
-  }
-
-  function enqueue(name) {
-    if (root.playQueue.length >= root.maxQueue) return
-    var path = root.resolvedSound(name)
-    if (!path) return
-    root.playQueue = root.playQueue.concat([path])
-    root.kickPlayer()
   }
 
   function kickPlayer() {
@@ -150,6 +196,26 @@ Item {
     objects: root.sink ? [root.sink] : []
   }
 
+  Process {
+    id: ensureStateDir
+    command: ["mkdir", "-p", root.stateDir]
+  }
+
+  FileView {
+    id: logFile
+    path: root.logPath
+    watchChanges: false
+    printErrors: false
+    onLoadFailed: setText("")
+  }
+
+  FileView {
+    id: logPrev
+    path: root.logPrevPath
+    watchChanges: false
+    printErrors: false
+  }
+
   FileView {
     id: configFile
     path: root.configPath
@@ -195,13 +261,19 @@ Item {
 
   Process {
     id: player
+    stderr: StdioCollector {
+      id: playerErr
+      waitForEnd: true
+    }
     onExited: function(exitCode) {
       if (root.stoppingPlayer) {
         root.stoppingPlayer = false
         return
       }
-      if (exitCode !== 0)
-        console.warn("oma-power-sounds: pw-play exited", exitCode, root.playingPath)
+      if (exitCode !== 0) {
+        var err = String(playerErr.text || "").trim()
+        root.fail("pw-play exited " + exitCode + " " + root.playingPath + (err ? ": " + err : ""))
+      }
       root.kickPlayer()
     }
   }
@@ -221,18 +293,27 @@ Item {
         "system_silent=" + root.systemSilent,
         "should_play=" + root.shouldPlay,
         "volume=" + root.volume,
-        "config=" + root.configPath
+        "config=" + root.configPath,
+        "log=" + root.logPath,
+        "last_error=" + (root.lastError || "")
       ].join("\n")
+    }
+
+    function log(): string {
+      var prev = ""
+      var cur = ""
+      try { prev = String(logPrev.text() || "") } catch (e) {}
+      try { cur = String(logFile.text() || "") } catch (e) {}
+      return (prev + cur) || "(empty)"
     }
 
     function play(event: string): string {
       var name = String(event || "").trim()
       if (Model.eventNames().indexOf(name) < 0)
         return "unknown event: " + name + "\n" + Model.eventNames().join("\n")
-      root.emitEvent(name)
-      if (!root.shouldPlay)
-        return "silent"
-      return name
+      return root.playNamed(name)
     }
   }
+
+  Component.onCompleted: ensureStateDir.running = true
 }
