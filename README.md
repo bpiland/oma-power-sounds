@@ -1,5 +1,7 @@
 # oma-power-sounds
 
+Pre-1.0 (**0.9.0**). API and cues may still change.
+
 Short analog cues for charger plug/unplug, low battery, and battery full on [Omarchy](https://omarchy.org/).
 
 This is an Omarchy **shell plugin**, not a theme and not a standalone daemon. It is a headless `service` inside `omarchy-shell`: it watches UPower and plays four bundled cues through PipeWire's `pw-play`. No extra systemd unit.
