@@ -1,6 +1,6 @@
 # oma-power-sounds
 
-Pre-1.0 (**0.9.0**). API and cues may still change.
+Pre-1.0 (**0.9.1**). API and cues may still change.
 
 Short analog cues for charger plug/unplug, low battery, and battery full on [Omarchy](https://omarchy.org/).
 
@@ -80,13 +80,7 @@ Cap is 32KB, then the file is moved to `oma-power-sounds.log.1` and starts over.
 
 Omarchy with `omarchy-shell` (Quickshell) and PipeWire's `pw-play`. Both ship with current Omarchy.
 
-## Regenerating the cues
-
-The four WAVs in `sounds/` are synthesized by `scripts/generate_sounds.py`. Runtime does not need Python.
-
-```bash
-python3 scripts/generate_sounds.py
-```
+## Tests
 
 Event policy (when a cue fires, not how it sounds) is in `PowerSoundsModel.js` and can be checked without QML:
 
