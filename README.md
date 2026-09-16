@@ -57,7 +57,7 @@ full_percent=100
 ```bash
 omarchy-shell oma-power-sounds list
 omarchy-shell oma-power-sounds status
-omarchy-shell oma-power-sounds log
+omarchy-shell oma-power-sounds errors
 omarchy-shell oma-power-sounds play ac-online
 omarchy-shell oma-power-sounds play ac-offline
 omarchy-shell oma-power-sounds play battery-low

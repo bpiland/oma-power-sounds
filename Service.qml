@@ -299,7 +299,7 @@ Item {
       ].join("\n")
     }
 
-    function log(): string {
+    function errors(): string {
       var prev = ""
       var cur = ""
       try { prev = String(logPrev.text() || "") } catch (e) {}
