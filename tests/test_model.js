@@ -105,6 +105,9 @@ function soundMap() {
     "/plugins/oma-power-sounds/sounds/ac-online.wav"
   )
   assert.strictEqual(Model.soundFile("usb-add"), "")
+  assert.strictEqual(Model.soundFile("__proto__", "/tmp"), "")
+  assert.strictEqual(Model.soundFile("constructor", "/tmp"), "")
+  assert.strictEqual(Model.soundFile("toString", "/tmp"), "")
 }
 
 function noBattery() {

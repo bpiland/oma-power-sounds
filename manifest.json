@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "oma-power-sounds",
   "name": "oma-power-sounds",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": "Baden Piland",
   "license": "MIT",
   "description": "Short analog cues for charger plug/unplug, low battery, and battery full.",

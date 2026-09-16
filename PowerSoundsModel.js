@@ -31,8 +31,9 @@ function eventNames() {
 }
 
 function soundFile(event, pluginDir) {
+  if (!Object.prototype.hasOwnProperty.call(SOUND_FILES, event))
+    return ""
   var rel = SOUND_FILES[event]
-  if (!rel) return ""
   if (!pluginDir) return rel
   return String(pluginDir).replace(/\/$/, "") + "/" + rel
 }

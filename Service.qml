@@ -13,6 +13,8 @@ Item {
 
   readonly property int lowThreshold: Model.DEFAULT_LOW_THRESHOLD
   readonly property int startupGraceMs: 600
+  readonly property int acDebounceMs: 250
+  readonly property int maxQueue: 2
   readonly property string configPath: Quickshell.env("HOME") + "/.config/omarchy/oma-power-sounds.conf"
   readonly property string pluginDir: manifest && manifest.__sourceDir ? String(manifest.__sourceDir) : ""
 
@@ -54,6 +56,7 @@ Item {
   }
 
   function enqueue(name) {
+    if (root.playQueue.length >= root.maxQueue) return
     var path = Model.soundFile(name, root.pluginDir)
     if (!path) return
     root.playQueue = root.playQueue.concat([path])
@@ -73,6 +76,7 @@ Item {
       "--latency", "20ms",
       "--volume", String(root.volume),
       "--media-role", "Notification",
+      "--",
       path
     ]
     player.running = true
@@ -87,9 +91,13 @@ Item {
   }
 
   function handleAcChange() {
-    var onBattery = UPower.onBattery
-    var name = Model.acEvent(root.lastOnBattery, onBattery)
-    root.lastOnBattery = onBattery
+    acDebounce.restart()
+  }
+
+  function commitAcChange() {
+    var next = UPower.onBattery
+    var name = Model.acEvent(root.lastOnBattery, next)
+    root.lastOnBattery = next
     if (root.listening) root.emitEvent(name)
   }
 
@@ -151,6 +159,13 @@ Item {
     interval: root.startupGraceMs
     repeat: false
     onTriggered: root.startListening()
+  }
+
+  Timer {
+    id: acDebounce
+    interval: root.acDebounceMs
+    repeat: false
+    onTriggered: root.commitAcChange()
   }
 
   Connections {
