@@ -16,13 +16,13 @@ Item {
   readonly property int acDebounceMs: 250
   readonly property int maxQueue: 2
   readonly property string configPath: Quickshell.env("HOME") + "/.config/omarchy/oma-power-sounds.conf"
-  readonly property string pluginDir: manifest && manifest.__sourceDir ? String(manifest.__sourceDir) : ""
 
   property var config: Model.defaultConfig()
   property bool listening: false
   property var lastOnBattery: null
   property var playQueue: []
   property bool stoppingPlayer: false
+  property string playingPath: ""
 
   readonly property var sink: Pipewire.defaultAudioSink
   readonly property bool sinkKnown: !!(sink && sink.audio)
@@ -55,9 +55,18 @@ Item {
     root.enqueue(name)
   }
 
+  function resolvedSound(name) {
+    var rel = Model.soundFile(name)
+    if (!rel) return ""
+    var url = String(Qt.resolvedUrl(rel))
+    if (url.indexOf("file://") === 0)
+      return url.slice(7)
+    return url
+  }
+
   function enqueue(name) {
     if (root.playQueue.length >= root.maxQueue) return
-    var path = Model.soundFile(name, root.pluginDir)
+    var path = root.resolvedSound(name)
     if (!path) return
     root.playQueue = root.playQueue.concat([path])
     root.kickPlayer()
@@ -71,6 +80,7 @@ Item {
     }
     var path = root.playQueue[0]
     root.playQueue = root.playQueue.slice(1)
+    root.playingPath = path
     player.command = [
       "/usr/bin/pw-play",
       "--latency", "20ms",
@@ -191,7 +201,7 @@ Item {
         return
       }
       if (exitCode !== 0)
-        console.warn("oma-power-sounds: pw-play exited", exitCode)
+        console.warn("oma-power-sounds: pw-play exited", exitCode, root.playingPath)
       root.kickPlayer()
     }
   }
