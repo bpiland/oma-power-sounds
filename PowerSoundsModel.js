@@ -30,12 +30,10 @@ function eventNames() {
   return EVENTS.slice()
 }
 
-function soundFile(event, pluginDir) {
+function soundFile(event) {
   if (!Object.prototype.hasOwnProperty.call(SOUND_FILES, event))
     return ""
-  var rel = SOUND_FILES[event]
-  if (!pluginDir) return rel
-  return String(pluginDir).replace(/\/$/, "") + "/" + rel
+  return SOUND_FILES[event]
 }
 
 function clampPercent(n, fallback) {

@@ -29,6 +29,8 @@ Item {
   property bool stoppingPlayer: false
   property string playingPath: ""
   property string lastError: ""
+  property bool logReady: false
+  property string logPending: ""
 
   readonly property var sink: Pipewire.defaultAudioSink
   readonly property bool sinkKnown: !!(sink && sink.audio)
@@ -56,39 +58,58 @@ Item {
       startupGrace.start()
   }
 
-  function fail(msg) {
-    var line = Qt.formatDateTime(new Date(), "yyyy-MM-dd hh:mm:ss") + " ERROR " + msg
-    root.lastError = line
-    console.warn("oma-power-sounds:", msg)
+  function logLine(level, msg) {
+    var clean = String(msg || "").replace(/[\r\n]+/g, " ")
+    var line = Qt.formatDateTime(new Date(), "yyyy-MM-dd hh:mm:ss") + " " + level + " " + clean
+    if (level === "ERROR")
+      root.lastError = line
+    console.warn("oma-power-sounds:", clean)
     root.appendLog(line)
   }
 
-  function warn(msg) {
-    var line = Qt.formatDateTime(new Date(), "yyyy-MM-dd hh:mm:ss") + " WARN  " + msg
-    console.warn("oma-power-sounds:", msg)
-    root.appendLog(line)
-  }
-
-  function appendLog(line) {
-    var body = ""
+  function logBody() {
     try {
-      body = String(logFile.text() || "")
+      return String(logFile.text() || "")
     } catch (e) {
-      body = ""
+      return ""
     }
-    if (body.length && body.charAt(body.length - 1) !== "\n")
-      body += "\n"
-    body += line + "\n"
+  }
+
+  function writeLogBody(body) {
     if (body.length > root.maxLogBytes) {
       logPrev.setText(body)
-      body = line + "\n"
+      var keep = body.slice(-root.maxLogBytes)
+      var cut = keep.indexOf("\n")
+      body = cut >= 0 ? keep.slice(cut + 1) : keep
     }
     logFile.setText(body)
   }
 
-  function emitEvent(name) {
-    if (!name) return
-    root.playNamed(name)
+  function appendLog(line) {
+    if (!root.logReady) {
+      root.logPending += line + "\n"
+      return
+    }
+    var body = root.logBody()
+    if (root.logPending) {
+      body = root.logPending + body
+      root.logPending = ""
+    }
+    if (body.length && body.charAt(body.length - 1) !== "\n")
+      body += "\n"
+    root.writeLogBody(body + line + "\n")
+  }
+
+  function flushLogPending() {
+    root.logReady = true
+    if (!root.logPending)
+      return
+    var extra = root.logPending
+    root.logPending = ""
+    var body = root.logBody()
+    if (body.length && body.charAt(body.length - 1) !== "\n")
+      body += "\n"
+    root.writeLogBody(body + extra)
   }
 
   function playNamed(name) {
@@ -96,12 +117,12 @@ Item {
     if (quiet)
       return "silent: " + quiet
     if (root.playQueue.length >= root.maxQueue) {
-      root.warn("queue full, drop " + name)
+      root.logLine("WARN", "queue full, drop " + name)
       return "error: queue full"
     }
     var path = root.resolvedSound(name)
     if (!path || path.charAt(0) !== "/") {
-      root.fail("no sound file for " + name + (path ? " (" + path + ")" : ""))
+      root.logLine("ERROR", "no sound file for " + name + (path ? " (" + path + ")" : ""))
       return "error: no sound file for " + name
     }
     root.playQueue = root.playQueue.concat([path])
@@ -112,9 +133,9 @@ Item {
   function resolvedSound(name) {
     var rel = Model.soundFile(name)
     if (!rel) return ""
-    var url = String(Qt.resolvedUrl(rel))
-    if (url.indexOf("file://") === 0)
-      return url.slice(7)
+    var url = String(Qt.resolvedUrl(rel)).replace(/^file:\/\//, "")
+    if (url.charAt(0) !== "/")
+      return ""
     return url
   }
 
@@ -154,7 +175,9 @@ Item {
     var next = UPower.onBattery
     var name = Model.acEvent(root.lastOnBattery, next)
     root.lastOnBattery = next
-    if (root.listening) root.emitEvent(name)
+    if (!root.listening) return
+    if (name) root.playNamed(name)
+    root.handleChargeChange()
   }
 
   function handleChargeChange() {
@@ -172,7 +195,7 @@ Item {
     persisted.notifiedLow = result.notifiedLow
     persisted.notifiedFull = result.notifiedFull
     for (var i = 0; i < result.events.length; i++)
-      root.emitEvent(result.events[i])
+      root.playNamed(result.events[i])
   }
 
   function startListening() {
@@ -206,7 +229,8 @@ Item {
     path: root.logPath
     watchChanges: false
     printErrors: false
-    onLoadFailed: setText("")
+    onLoaded: root.flushLogPending()
+    onLoadFailed: root.flushLogPending()
   }
 
   FileView {
@@ -248,7 +272,6 @@ Item {
     target: UPower
     function onOnBatteryChanged() {
       root.handleAcChange()
-      root.handleChargeChange()
     }
   }
 
@@ -272,7 +295,7 @@ Item {
       }
       if (exitCode !== 0) {
         var err = String(playerErr.text || "").trim()
-        root.fail("pw-play exited " + exitCode + " " + root.playingPath + (err ? ": " + err : ""))
+        root.logLine("ERROR", "pw-play exited " + exitCode + " " + root.playingPath + (err ? ": " + err : ""))
       }
       root.kickPlayer()
     }

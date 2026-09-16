@@ -100,14 +100,10 @@ function alreadyFullOnStart() {
 
 function soundMap() {
   assert.strictEqual(Model.soundFile("ac-online"), "sounds/ac-online.wav")
-  assert.strictEqual(
-    Model.soundFile("ac-online", "/plugins/oma-power-sounds"),
-    "/plugins/oma-power-sounds/sounds/ac-online.wav"
-  )
   assert.strictEqual(Model.soundFile("usb-add"), "")
-  assert.strictEqual(Model.soundFile("__proto__", "/tmp"), "")
-  assert.strictEqual(Model.soundFile("constructor", "/tmp"), "")
-  assert.strictEqual(Model.soundFile("toString", "/tmp"), "")
+  assert.strictEqual(Model.soundFile("__proto__"), "")
+  assert.strictEqual(Model.soundFile("constructor"), "")
+  assert.strictEqual(Model.soundFile("toString"), "")
 }
 
 function noBattery() {
